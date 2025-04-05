@@ -18,7 +18,7 @@
         Write New
       </a>
       <a 
-        href="/summary"
+        href="/Summarize"
         class="bg-white text-black px-4 py-1 rounded hover:bg-gray-200 transition-colors duration-200 text-sm font-medium"
       >
         Summarize Me
