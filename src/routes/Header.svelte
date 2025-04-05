@@ -3,7 +3,9 @@
   import { goto } from '$app/navigation';
 
   function handleLogout() {
-    // TODO: Add any logout cleanup logic here (clear session, etc)
+    // Clear user data from localStorage
+    localStorage.removeItem('user');
+    // Redirect to login page
     goto('/');
   }
 </script>

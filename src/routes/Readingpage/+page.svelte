@@ -1,8 +1,50 @@
 <script lang="ts">
     import type { PageData } from './$types';
     import Header from '../Header.svelte';
+    import { goto } from '$app/navigation';
+    import { onMount } from 'svelte';
 
     let { data }: { data: PageData } = $props();
+    
+    interface Journal {
+        id: number;
+        title: string;
+        mood: string;
+        description: string;
+        userId: number;
+        createdAt: Date;
+    }
+
+    const state = $state({
+        journal: null as Journal | null,
+        error: '',
+        isLoading: true
+    });
+
+    onMount(async () => {
+        try {
+            const path = window.location.pathname;
+            const journalId = path.split('/').pop();
+            
+            if (!journalId) {
+                throw new Error('No journal ID provided');
+            }
+
+            const response = await fetch(`/api/journals/${journalId}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                state.journal = data.journal;
+            } else {
+                state.error = data.error;
+            }
+        } catch (err) {
+            state.error = 'Failed to fetch journal entry';
+            console.error(err);
+        } finally {
+            state.isLoading = false;
+        }
+    });
 </script>
 
 <Header />
@@ -11,29 +53,31 @@
     <div class="container mx-auto py-16">
         <div class="max-w-2xl mx-auto">
             <div class="bg-white rounded-lg p-8 shadow-lg relative">
-                {#if data.entry}
+                {#if state.isLoading}
+                    <p class="text-center text-gray-600">Loading...</p>
+                {:else if state.error}
+                    <p class="text-center text-red-600">{state.error}</p>
+                {:else if state.journal}
                     <!-- Action buttons -->
                     <div class="absolute top-4 right-4 flex gap-2">
-                        <button class="p-2 hover:bg-gray-100 rounded-full">
+                        <button 
+                            class="p-2 hover:bg-gray-100 rounded-full"
+                            on:click={() => goto(`/Journalpage`)}
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                        <button class="p-2 hover:bg-gray-100 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
                         </button>
                     </div>
 
                     <!-- Content -->
-                    <h1 class="text-2xl font-bold text-center mb-4">{data.entry.title}</h1>
-                    <p class="text-gray-600 text-center mb-8">{data.entry.mood}</p>
+                    <h1 class="text-2xl font-bold text-center mb-4">{state.journal.title}</h1>
+                    <p class="text-gray-600 text-center mb-8">{state.journal.mood}</p>
                     <div class="prose max-w-none">
-                        {data.entry.content}
+                        {state.journal.description}
                     </div>
                 {:else}
-                    <p class="text-center text-gray-600">No entry selected</p>
+                    <p class="text-center text-gray-600">No entry found</p>
                 {/if}
             </div>
         </div>
