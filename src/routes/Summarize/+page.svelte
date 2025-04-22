@@ -38,11 +38,6 @@
                 if (!user?.id) {
                     throw new Error('Invalid user data');
                 }
-                // Initial fetch of summary (but don't display it yet)
-                fetchSummary();
-                
-                // Set up polling for real-time updates
-                state.pollingInterval = setInterval(fetchSummary, 30000) as unknown as number; // Poll every 30 seconds
             } else {
                 throw new Error('No user data found');
             }
@@ -53,10 +48,7 @@
     });
     
     onDestroy(() => {
-        // Clear polling interval when component is destroyed
-        if (state.pollingInterval !== null) {
-            clearInterval(state.pollingInterval);
-        }
+        // No need to clear polling interval anymore
     });
     
     async function fetchSummary(query: string = '') {
@@ -112,7 +104,37 @@
                 response = "I've refreshed your journal insights with the latest data!";
             } 
             else if (lowerQuery.includes('help') || lowerQuery.includes('what can you')) {
-                response = "I can provide AI-powered insights about your journal entries using Llama 3.2. Try asking about your moods, recent entries, or common themes. I automatically update every 30 seconds to reflect your latest journal entries.";
+                response = `I can provide AI-powered insights about your journal entries using Llama 3.2. Here are some things you can ask me:
+
+1. "What's my mood trend?" - Get insights about your emotional patterns
+2. "What are my recent entries about?" - Summary of your latest journal entries
+3. "What themes do I write about most?" - Analysis of common topics in your journals
+4. "How has my mood changed over time?" - Track your emotional journey
+5. "What was I feeling on [specific date]?" - Get insights about a particular day
+6. "What are my most common emotions?" - Analysis of your emotional patterns
+7. "Tell me about my recent achievements" - Highlights from your recent entries
+
+I automatically update every 30 seconds to reflect your latest journal entries.`;
+            }
+            else if (lowerQuery.includes('mood trend') || lowerQuery.includes('emotional pattern')) {
+                await fetchSummary('Analyze my mood trends and emotional patterns over time');
+                response = state.summary || "I couldn't analyze your mood patterns at this time. Please try again later.";
+            }
+            else if (lowerQuery.includes('recent entries') || lowerQuery.includes('latest entries')) {
+                await fetchSummary('Summarize my most recent journal entries');
+                response = state.summary || "I couldn't analyze your recent entries at this time. Please try again later.";
+            }
+            else if (lowerQuery.includes('themes') || lowerQuery.includes('topics')) {
+                await fetchSummary('What are the main themes and topics in my journal entries?');
+                response = state.summary || "I couldn't analyze your journal themes at this time. Please try again later.";
+            }
+            else if (lowerQuery.includes('achievements') || lowerQuery.includes('success')) {
+                await fetchSummary('What achievements and successes have I mentioned in my journals?');
+                response = state.summary || "I couldn't analyze your achievements at this time. Please try again later.";
+            }
+            else if (lowerQuery.includes('emotions') || lowerQuery.includes('feelings')) {
+                await fetchSummary('What are my most common emotions and feelings?');
+                response = state.summary || "I couldn't analyze your emotions at this time. Please try again later.";
             }
             else {
                 // For all other queries, use the Ollama-powered API
@@ -159,6 +181,15 @@
                 {#if state.lastUpdated}
                     <p class="text-sm text-gray-500 mt-1">Last updated: {state.lastUpdated.toLocaleTimeString()}</p>
                 {/if}
+                <button 
+                    onclick={() => processUserQuery('Analyze my mood trends and emotional patterns over time')}
+                    class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition flex items-center justify-center mx-auto"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Quick Mood Insight
+                </button>
             </div>
             
             <div class="flex-1 p-6 overflow-y-auto flex flex-col space-y-4" style="max-height: 400px;">
